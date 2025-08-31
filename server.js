@@ -7,6 +7,7 @@ const port = 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
 const dbURI =
   "mongodb+srv://matheusgaliano_db_user:aGOGKfYbdKPRbzaM@cluster0.f8mdxxm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -30,6 +31,10 @@ const agendamentoSchema = new mongoose.Schema({
 });
 
 const Agendamento = mongoose.model("Agendamento", agendamentoSchema);
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "scheduler.html"));
+});
 
 app.post("/agendar", async (req, res) => {
   try {
