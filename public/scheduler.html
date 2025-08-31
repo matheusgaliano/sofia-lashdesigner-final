@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sofia Severo | Agendamento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        background-color: #fdf2f8;
+      }
+      .time-option {
+        cursor: pointer;
+        transition: background-color 0.3s, color 0.3s;
+      }
+      .time-option:hover {
+        background-color: #fce7f3;
+      }
+      .time-option.selected {
+        background-color: #db2777;
+        color: white;
+        font-weight: 600;
+      }
+      .time-option.disabled {
+        background-color: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+      }
+      .time-option.disabled:hover {
+        background-color: #f3f4f6;
+      }
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      .service-card {
+        transition: all 0.3s ease;
+      }
+      .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      .service-card.selected {
+        border-color: #db2777;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+    </style>
+  </head>
+  <body class="font-sans">
+    <div class="container mx-auto p-4 md:p-8">
+      <header class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-800">
+          Agende seu Horário
+        </h1>
+        <p class="text-lg text-gray-600 mt-2">
+          Escolha o melhor serviço para você e reserve seu momento!
+        </p>
+      </header>
+
+      <main class="bg-white p-6 md:p-10 rounded-lg shadow-lg max-w-4xl mx-auto">
+        <div id="step-service-selection" class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+            Qual serviço você deseja?
+          </h2>
+          <div
+            id="service-cards-container"
+            class="grid grid-cols-1 md:grid-cols-3 gap-6"
+          ></div>
+        </div>
+
+        <form id="agendamento-form" class="hidden">
+          <input type="hidden" id="servico-input" name="servico" required />
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="mb-6">
+              <label for="nome" class="block text-gray-700 font-semibold mb-2"
+                >Nome Completo</label
+              >
+              <input
+                type="text"
+                id="nome"
+                name="nome"
+                class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition duration-300"
+                required
+              />
+            </div>
+
+            <div class="mb-6">
+              <label for="email" class="block text-gray-700 font-semibold mb-2"
+                >E-mail</label
+              >
+              <input
+                type="email"
+                id="email"
+                name="email"
+                class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition duration-300"
+                required
+              />
+            </div>
+
+            <div class="mb-6">
+              <label
+                for="telefone"
+                class="block text-gray-700 font-semibold mb-2"
+                >Telefone</label
+              >
+              <input
+                type="tel"
+                id="telefone"
+                name="telefone"
+                class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition duration-300"
+                required
+              />
+            </div>
+
+            <div class="mb-6">
+              <label for="data" class="block text-gray-700 font-semibold mb-2"
+                >Data</label
+              >
+              <input
+                type="date"
+                id="data"
+                name="data"
+                class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 transition duration-300"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="horario" class="block text-gray-700 font-semibold mb-2"
+              >Horário</label
+            >
+            <div
+              id="horarios-container"
+              class="grid grid-cols-3 md:grid-cols-4 gap-3"
+            >
+              <div
+                id="loading-horarios"
+                class="col-span-3 md:col-span-4 text-center text-gray-500 hidden"
+              >
+                Carregando horários...
+              </div>
+            </div>
+            <input type="hidden" id="horario-input" name="horario" required />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-pink-600 text-white p-3 rounded-md font-semibold hover:bg-pink-700 transition duration-300"
+          >
+            Agendar
+          </button>
+        </form>
+      </main>
+    </div>
+
+    <div id="confirmation-modal" class="modal-overlay hidden">
+      <div
+        class="bg-white p-8 rounded-lg shadow-xl text-center max-w-md w-full mx-4"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-16 w-16 text-green-500 mx-auto mb-4"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">
+          Agendamento Concluído!
+        </h3>
+        <p class="text-gray-600 mb-6">
+          Seu horário foi reservado com sucesso. Aguardamos sua visita!
+        </p>
+        <button
+          id="close-modal-btn"
+          class="bg-pink-600 text-white p-3 rounded-md font-semibold hover:bg-pink-700 transition duration-300"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("agendamento-form");
+      const dataInput = document.getElementById("data");
+      const horariosContainer = document.getElementById("horarios-container");
+      const horarioInput = document.getElementById("horario-input");
+      const serviceCardsContainer = document.getElementById(
+        "service-cards-container"
+      );
+      const servicoInput = document.getElementById("servico-input");
+      const confirmationModal = document.getElementById("confirmation-modal");
+      const closeModalBtn = document.getElementById("close-modal-btn");
+      const loadingHorarios = document.getElementById("loading-horarios");
+
+      const horariosDisponiveis = [
+        "09:00",
+        "10:00",
+        "11:00",
+        "12:00",
+        "13:00",
+        "14:00",
+        "15:00",
+        "16:00",
+        "17:00",
+        "18:00",
+        "19:00",
+        "20:00",
+      ];
+
+      const servicos = {
+        maquiagem: {
+          nome: "Maquiagem Profissional",
+          descricao:
+            "Realce sua beleza com uma maquiagem impecável para qualquer ocasião.",
+          preco: "R$ 150,00",
+        },
+        cilios: {
+          nome: "Aplicação de Cílios",
+          descricao:
+            "Obtenha um olhar marcante e volumoso com a técnica de alongamento de cílios.",
+          preco: "R$ 100,00",
+        },
+        sobrancelha: {
+          nome: "Design de Sobrancelha",
+          descricao:
+            "Modele suas sobrancelhas de acordo com o formato do seu rosto, valorizando seu olhar.",
+          preco: "R$ 50,00",
+        },
+      };
+
+      function renderServiceCards() {
+        serviceCardsContainer.innerHTML = "";
+        for (const [key, details] of Object.entries(servicos)) {
+          const card = document.createElement("div");
+          card.classList.add(
+            "service-card",
+            "bg-gray-50",
+            "p-6",
+            "rounded-lg",
+            "shadow-sm",
+            "border",
+            "border-gray-200",
+            "cursor-pointer",
+            "flex",
+            "flex-col",
+            "justify-between"
+          );
+          card.dataset.service = key;
+          card.innerHTML = `
+            <div>
+              <h3 class="text-lg font-bold text-gray-800 mb-2">${details.nome}</h3>
+              <p class="text-gray-600 text-sm mb-4">${details.descricao}</p>
+            </div>
+            <div class="mt-auto">
+              <span class="text-pink-600 font-bold text-xl">${details.preco}</span>
+            </div>
+          `;
+          serviceCardsContainer.appendChild(card);
+
+          card.addEventListener("click", () => {
+            document
+              .querySelectorAll(".service-card")
+              .forEach((c) => c.classList.remove("selected"));
+            card.classList.add("selected");
+            servicoInput.value = key;
+            form.classList.remove("hidden");
+          });
+        }
+      }
+
+      async function fetchHorariosOcupados(data) {
+        if (!data) return [];
+        try {
+          const response = await fetch(`/horarios-ocupados?data=${data}`);
+          if (!response.ok) {
+            throw new Error("Erro ao buscar horários.");
+          }
+          const horarios = await response.json();
+          return horarios;
+        } catch (error) {
+          console.error("Erro ao buscar horários ocupados:", error);
+          return [];
+        }
+      }
+
+      async function renderHorarios() {
+        const dataSelecionada = dataInput.value;
+        horariosContainer.innerHTML = "";
+        horarioInput.value = "";
+
+        if (!dataSelecionada) {
+          return;
+        }
+
+        loadingHorarios.classList.remove("hidden");
+
+        const horariosOcupados = await fetchHorariosOcupados(dataSelecionada);
+
+        loadingHorarios.classList.add("hidden");
+
+        horariosDisponiveis.forEach((horario) => {
+          const button = document.createElement("div");
+          const isOcupado = horariosOcupados.includes(horario);
+          button.textContent = horario;
+          button.classList.add(
+            "time-option",
+            "p-3",
+            "rounded-md",
+            "text-center",
+            "font-medium",
+            "transition",
+            "duration-300",
+            "border",
+            "border-gray-200"
+          );
+
+          if (isOcupado) {
+            button.classList.add("disabled");
+          } else {
+            button.classList.add("bg-white", "hover:bg-pink-50");
+            button.addEventListener("click", () => {
+              document
+                .querySelectorAll(".time-option")
+                .forEach((btn) => btn.classList.remove("selected"));
+              button.classList.add("selected");
+              horarioInput.value = horario;
+            });
+          }
+
+          horariosContainer.appendChild(button);
+        });
+      }
+
+      function showConfirmationModal() {
+        confirmationModal.classList.remove("hidden");
+      }
+
+      function hideConfirmationModal() {
+        confirmationModal.classList.add("hidden");
+        form.reset();
+        form.classList.add("hidden");
+        document
+          .querySelectorAll(".service-card")
+          .forEach((c) => c.classList.remove("selected"));
+        horariosContainer.innerHTML = "";
+        servicoInput.value = "";
+      }
+
+      dataInput.addEventListener("change", renderHorarios);
+      closeModalBtn.addEventListener("click", hideConfirmationModal);
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const agendamentoData = Object.fromEntries(formData.entries());
+
+        if (!agendamentoData.horario) {
+          window.alert("Por favor, selecione um horário.");
+          return;
+        }
+
+        try {
+          const response = await fetch("/agendar", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(agendamentoData),
+          });
+
+          if (response.ok) {
+            showConfirmationModal();
+          } else {
+            const error = await response.json();
+            window.alert("Erro ao agendar: " + error.message);
+          }
+        } catch (error) {
+          window.alert("Erro de conexão. Tente novamente mais tarde.");
+        }
+      });
+
+      const hoje = new Date().toISOString().split("T")[0];
+      dataInput.min = hoje;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderServiceCards();
+      });
+    </script>
+  </body>
+</html>

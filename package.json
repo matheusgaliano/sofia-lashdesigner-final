@@ -1,0 +1,15 @@
+{
+  "name": "agendador-backend",
+  "version": "1.0.0",
+  "description": "Backend para o sistema de agendamento de Sofia Severo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0"
+  },
+  "author": "Seu Nome",
+  "license": "ISC"
+}
